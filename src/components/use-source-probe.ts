@@ -25,6 +25,19 @@ export interface SourceProbeProgress {
   startedAt: number;
 }
 
+export interface SourceProbeItemResult {
+  key: string;
+  ok: boolean;
+  ms: number;
+  error?: string;
+}
+
+export interface SourceProbeSummary {
+  total: number;
+  ok: number;
+  results: SourceProbeItemResult[];
+}
+
 export function useSourceProbe() {
   const [progress, setProgress] = useState<SourceProbeProgress | null>(null);
   const runIdRef = useRef(0);
@@ -94,7 +107,11 @@ export function useSourceProbe() {
     useAppStore.getState().recordSourceHealth(outcomes);
     setProgress(null);
     // 返回汇总供调用方提示；被取消时返回 undefined
-    return { total, ok: okCount };
+    return {
+      total,
+      ok: okCount,
+      results: outcomes.map((o) => ({ key: o.sourceKey, ok: o.ok, ms: o.ms, error: o.error })),
+    };
   }, []);
 
   return { progress, probe, cancel, isProbing: progress !== null };

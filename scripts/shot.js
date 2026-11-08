@@ -43,6 +43,15 @@ app.whenReady().then(async () => {
     document.documentElement.style.colorScheme = ${JSON.stringify(theme)};
   `);
   await wait(1500);
+  if (process.env.SHOT_ACTIONS_FILE) {
+    const actions = fs.readFileSync(process.env.SHOT_ACTIONS_FILE, 'utf8');
+    try {
+      await win.webContents.executeJavaScript(actions);
+    } catch (error) {
+      console.error('actions failed:', error);
+    }
+    await wait(Number(process.env.SHOT_ACTIONS_WAIT || 2500));
+  }
 
   const image = await win.webContents.capturePage();
   const target = path.resolve(outName);

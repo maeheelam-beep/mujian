@@ -221,6 +221,12 @@ const VOD_FILTERS: { id: VodFilter; label: string }[] = [
   { id: 'manual', label: '手动添加' },
 ];
 
+type ProbeReport = {
+  total: number;
+  ok: number;
+  failed: { name: string; url: string; error?: string }[];
+};
+
 function VodSourcesPanel() {
   const store = useAppStore();
   const { toast } = useToast();
@@ -230,6 +236,7 @@ function VodSourcesPanel() {
   const [filter, setFilter] = useState<VodFilter>('all');
   const { tests, runTest } = useSourceTests();
   const { progress, probe, cancel, isProbing } = useSourceProbe();
+  const [report, setReport] = useState<ProbeReport | null>(null);
 
   const envKeys = useMemo(() => new Set(store.envSources.map((s) => s.key)), [store.envSources]);
   const all = useMemo(() => [...store.envSources, ...store.customAPIs], [store.envSources, store.customAPIs]);
@@ -264,14 +271,43 @@ function VodSourcesPanel() {
     if (skipped > 0) toast(`已启用 ${eligible.length} 个；${skipped} 个成人源因过滤开启被跳过`, 'info');
   };
 
-  const runAll = async () => {
+  const runProbe = async (list: SourceConfig[]) => {
     if (isProbing) {
       cancel();
       return;
     }
-    const result = await probe(filtered.map((s) => ({ key: s.key, url: s.url })));
+    if (list.length === 0) return;
+    setReport(null);
+    const targets = list.map((s) => ({ key: s.key, url: s.url }));
+    const nameByKey = new Map(list.map((s) => [s.key, s.name]));
+    const result = await probe(targets);
     if (!result) return; // 被取消则无汇总
-    toast(`测活完成：${result.ok}/${result.total} 个可用`, result.ok === result.total ? 'success' : 'info');
+    const failed = result.results
+      .filter((r) => !r.ok)
+      .map((r) => ({
+        name: nameByKey.get(r.key) ?? r.key,
+        url: targets.find((t) => t.key === r.key)?.url ?? '',
+        error: r.error,
+      }));
+    setReport({ total: result.total, ok: result.ok, failed });
+    toast(
+      failed.length === 0
+        ? `测试完成：${result.ok} 个源全部可用`
+        : `测试完成：${result.ok}/${result.total} 个可用，${failed.length} 个失败`,
+      failed.length === 0 ? 'success' : 'info'
+    );
+  };
+
+  const runAll = () => runProbe(all);
+  const runFiltered = () => runProbe(filtered);
+
+  const copyFailures = async () => {
+    if (!report || report.failed.length === 0) return;
+    const text = report.failed
+      .map((f) => [f.name, f.url, f.error].filter(Boolean).join('\t'))
+      .join('\n');
+    const ok = await copyToClipboard(text);
+    toast(ok ? '失败列表已复制' : '复制失败，请手动选择', ok ? 'success' : 'error');
   };
 
   /** 一键恢复被自动停用的源（仅「已停用」筛选下提供） */
@@ -291,6 +327,15 @@ function VodSourcesPanel() {
         hint={empty ? undefined : `共 ${all.length} 个 · 已启用 ${all.filter((s) => store.selectedKeys.includes(s.key)).length}`}
         extra={
           <div className="flex items-center gap-1.5">
+            <button
+              className="btn-ghost btn-sm"
+              onClick={runAll}
+              disabled={all.length === 0}
+              title="依次测试全部点播源，失败结果会列出来"
+            >
+              <Icon name={isProbing ? 'close' : 'sparkle'} className="w-3.5 h-3.5 text-accent" />
+              {isProbing ? '停止测试' : '一键测试'}
+            </button>
             <button
               className="btn-ghost btn-sm"
               onClick={() => {
@@ -363,10 +408,12 @@ function VodSourcesPanel() {
               </button>
               <button
                 className="btn-ghost btn-sm"
-                onClick={runAll}
+                onClick={runFiltered}
                 disabled={filtered.length === 0}
+                title="测试当前筛选出的源"
               >
-                {isProbing ? '取消测活' : '批量测活'}
+                <Icon name={isProbing ? 'close' : 'sparkle'} className="w-3.5 h-3.5" />
+                {isProbing ? '停止测试' : '测试当前筛选'}
               </button>
               {/* 查看「已停用」时提供一键恢复，省去逐个点击 */}
               {filter === 'disabled' && (
@@ -390,6 +437,58 @@ function VodSourcesPanel() {
                 <button className="btn-ghost btn-sm shrink-0" onClick={cancel}>
                   取消
                 </button>
+              </div>
+            )}
+            {report && !isProbing && (
+              <div className="rounded-xl border border-line bg-surface/60 px-3 py-2.5">
+                <div className="flex items-center gap-2 text-[11.5px]">
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 font-medium',
+                      report.failed.length === 0 ? 'text-emerald-500' : 'text-accent'
+                    )}
+                  >
+                    <Icon name={report.failed.length === 0 ? 'check' : 'info'} className="h-3.5 w-3.5" />
+                    {report.failed.length === 0
+                      ? `全部 ${report.total} 个可用`
+                      : `${report.ok}/${report.total} 个可用`}
+                  </span>
+                  {report.failed.length > 0 && (
+                    <span className="text-faint">失败 {report.failed.length} 个</span>
+                  )}
+                  <div className="ml-auto flex items-center gap-1">
+                    {report.failed.length > 0 && (
+                      <button className="btn-ghost btn-sm" onClick={copyFailures}>
+                        复制失败列表
+                      </button>
+                    )}
+                    <button
+                      className="rounded-md p-1 text-faint transition-colors hover:bg-hover hover:text-content"
+                      onClick={() => setReport(null)}
+                      aria-label="关闭测试结果"
+                      title="关闭"
+                    >
+                      <Icon name="close" className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {report.failed.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {report.failed.slice(0, 6).map((f, i) => (
+                      <li key={`${f.url}-${i}`} className="flex items-baseline gap-2 text-[11px]">
+                        <span className="max-w-[38%] truncate text-content/85">{f.name}</span>
+                        <span className="min-w-0 flex-1 truncate text-faint" title={f.error || f.url}>
+                          {f.error || f.url}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {report.failed.length > 6 && (
+                  <p className="mt-1.5 text-[10.5px] text-faint">
+                    还有 {report.failed.length - 6} 个，复制列表查看完整地址与错误。
+                  </p>
+                )}
               </div>
             )}
           </div>

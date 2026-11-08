@@ -3,6 +3,7 @@ import { guardRequest } from '@/lib/api-guard';
 import { checkUpstreamAllowed } from '@/lib/ssrf';
 import { fetchUpstream } from '@/lib/fetch-utils';
 import { parseSearchList } from '@/lib/cms-parser';
+import { isArchiveSource, searchArchive } from '@/lib/archive';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +29,19 @@ export async function POST(req: Request) {
   }
 
   const start = Date.now();
+
+  // Archive 合集不是 Apple CMS，不能用 ac=videolist 探活；改用一次真实检索。
+  const archiveSource = { key: 'test', name: 'test', url, provider: 'archive' as const };
+  if (isArchiveSource(archiveSource)) {
+    const outcome = await searchArchive(archiveSource, 'test');
+    return NextResponse.json({
+      ok: outcome.ok,
+      ms: outcome.ms,
+      count: outcome.list.length,
+      error: outcome.error,
+    });
+  }
+
   try {
     const res = await fetchUpstream(`${url}?ac=videolist&wd=test`, {
       timeoutMs: 6000,
