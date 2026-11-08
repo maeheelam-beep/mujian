@@ -26,6 +26,7 @@ import { useToast } from './toast';
 import { formatRelativeTime, hostnameOf, validateSourceUrl, cn } from '@/lib/utils';
 import { exportConfig, importConfig } from '@/lib/db';
 import { PERSIST_KEY } from '@/lib/persist-storage';
+import { parseSourcePaste } from '@/lib/source-import';
 import { copyToClipboard } from '@/lib/clipboard';
 import { useAuth } from './auth';
 import { api } from '@/lib/client-api';
@@ -224,6 +225,7 @@ function VodSourcesPanel() {
   const store = useAppStore();
   const { toast } = useToast();
   const [editing, setEditing] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<VodFilter>('all');
   const { tests, runTest } = useSourceTests();
@@ -288,12 +290,32 @@ function VodSourcesPanel() {
         title="点播源"
         hint={empty ? undefined : `共 ${all.length} 个 · 已启用 ${all.filter((s) => store.selectedKeys.includes(s.key)).length}`}
         extra={
-          <button className="btn-primary btn-sm" onClick={() => setEditing('__new__')}>
-            <Icon name="plus" className="w-3.5 h-3.5" />
-            添加 API
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              className="btn-ghost btn-sm"
+              onClick={() => {
+                setEditing(null);
+                setBulkOpen((v) => !v);
+              }}
+              aria-expanded={bulkOpen}
+            >
+              批量导入
+            </button>
+            <button
+              className="btn-primary btn-sm"
+              onClick={() => {
+                setBulkOpen(false);
+                setEditing('__new__');
+              }}
+            >
+              <Icon name="plus" className="w-3.5 h-3.5" />
+              添加 API
+            </button>
+          </div>
         }
       />
+
+      {bulkOpen && <BulkSourceImport onClose={() => setBulkOpen(false)} />}
 
       <SourceForm
         visible={editing === '__new__'}
@@ -1281,6 +1303,99 @@ function summarizeConfig(text: string): string {
     }
   }
   return parts.length > 0 ? `该文件包含 ${parts.join('、')}` : '该文件未包含可导入的数据';
+}
+
+// —— 批量粘贴导入 ——
+
+/** 把用户粘贴的多行文本一次加成本地源；不联网、不写入仓库。 */
+function BulkSourceImport({ onClose }: { onClose: () => void }) {
+  const store = useAppStore();
+  const { toast } = useToast();
+  const [text, setText] = useState('');
+
+  const existingUrls = useMemo(
+    () => [...store.envSources, ...store.customAPIs].map((s) => s.url),
+    [store.envSources, store.customAPIs]
+  );
+  const parsed = useMemo(() => parseSourcePaste(text, existingUrls), [text, existingUrls]);
+
+  const importAll = () => {
+    if (parsed.sources.length === 0) return;
+    for (const source of parsed.sources) {
+      useAppStore.getState().addCustomApi(source);
+    }
+    const skipped = parsed.duplicates + parsed.invalid;
+    toast(
+      skipped > 0
+        ? `已导入 ${parsed.sources.length} 个点播源；跳过 ${skipped} 条重复或无法识别的行`
+        : `已导入 ${parsed.sources.length} 个点播源`,
+      'success'
+    );
+    setText('');
+    onClose();
+  };
+
+  return (
+    <div className="mb-2 rounded-lg border border-line bg-chip/70 p-3">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium text-content">批量粘贴点播源</div>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-faint">
+            每行一个，支持「名称,地址」或只贴地址；也接受 JSON。只保存在本机，不会上传。
+          </p>
+        </div>
+        <button
+          className="rounded-md p-1 text-muted transition-colors hover:bg-hover hover:text-content"
+          onClick={onClose}
+          aria-label="关闭批量导入"
+        >
+          <Icon name="close" className="h-4 w-4" />
+        </button>
+      </div>
+
+      <textarea
+        autoFocus
+        className="input min-h-[148px] w-full resize-y font-mono text-[11.5px] leading-5"
+        aria-label="批量点播源文本"
+        spellCheck={false}
+        placeholder={'红牛资源,https://example.com/api.php/provide/vod\nhttps://example.com/api.php/provide/vod'}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-faint">
+        {text.trim() ? (
+          <>
+            <span>识别 {parsed.total} 条</span>
+            <span className="text-accent">新增 {parsed.sources.length}</span>
+            {parsed.duplicates > 0 && <span>重复 {parsed.duplicates}</span>}
+            {parsed.invalid > 0 && <span className="text-warning">无效 {parsed.invalid}</span>}
+            <span className="ml-auto">最多一次 300 个</span>
+          </>
+        ) : (
+          <span>以 # 或 // 开头的行会被忽略</span>
+        )}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <button
+          className="btn-ghost btn-sm"
+          onClick={() => setText('')}
+          disabled={!text}
+        >
+          清空
+        </button>
+        <div className="flex items-center gap-2">
+          <button className="btn-ghost btn-sm" onClick={onClose}>
+            取消
+          </button>
+          <button className="btn-primary btn-sm" onClick={importAll} disabled={parsed.sources.length === 0}>
+            {parsed.sources.length > 0 ? `导入 ${parsed.sources.length} 个` : '导入'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SourceForm({
