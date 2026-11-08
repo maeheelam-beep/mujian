@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <radialGradient id="bg" cx="72%" cy="6%" r="105%">
+      <stop offset="0" stop-color="#3a211a"/>
+      <stop offset="0.42" stop-color="#171010"/>
+      <stop offset="1" stop-color="#0a0a0b"/>
+    </radialGradient>
+    <linearGradient id="arch" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f08a6c"/>
+      <stop offset="1" stop-color="#b73e29"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e0694c" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#e0694c" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#e0694c" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1232" height="672" rx="20" fill="none" stroke="#f0ebe2" stroke-opacity="0.05"/>
+
+  <text x="640" y="102" text-anchor="middle" fill="#f0ebe2" fill-opacity="0.38"
+        font-family="Segoe UI, sans-serif" font-size="13" letter-spacing="9">MUJIAN CINEMA</text>
+
+  <g>
+    <path d="M510 486V306a130 130 0 0 1 260 0v180" fill="none" stroke="url(#arch)" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M552 486V316a88 88 0 0 1 176 0v170" fill="none" stroke="#f0ebe2" stroke-opacity="0.18" stroke-width="1.4"/>
+    <path d="M640 184v302" stroke="#f0ebe2" stroke-opacity="0.1" stroke-width="1"/>
+    <circle cx="640" cy="338" r="4" fill="#e0694c"/>
+    <circle cx="640" cy="338" r="18" fill="none" stroke="#e0694c" stroke-opacity="0.18" stroke-width="1"/>
+
+    <text x="640" y="430" text-anchor="middle" fill="#f0ebe2"
+          font-family="Iowan Old Style, Palatino Linotype, SimSun, serif" font-size="76" letter-spacing="12">幕间</text>
+  </g>
+
+  <path d="M470 532h300" stroke="url(#line)" stroke-width="1"/>
+  <text x="640" y="580" text-anchor="middle" fill="#f0ebe2" fill-opacity="0.44"
+        font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="17" letter-spacing="7">私人影院 · 本地播放</text>
+  <text x="640" y="646" text-anchor="middle" fill="#f0ebe2" fill-opacity="0.2"
+        font-family="Segoe UI, sans-serif" font-size="10" letter-spacing="5">A QUIET ROOM FOR FILMS</text>
+</svg>

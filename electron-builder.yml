@@ -1,0 +1,38 @@
+appId: com.mujian.cinema
+productName: 幕间
+copyright: Copyright © 2026 Mujian Contributors
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - desktop/**/*
+  - package.json
+
+extraResources:
+  - from: .next/standalone
+    to: server
+  - from: build/icon.png
+    to: icon.png
+
+asar: true
+compression: normal
+npmRebuild: false
+buildDependenciesFromSource: false
+afterPack: scripts/after-pack.cjs
+electronDist: node_modules/electron/dist
+
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: build/icon.ico
+  executableName: Mujian
+  legalTrademarks: 幕间 MUJIAN
+  requestedExecutionLevel: asInvoker
+
+portable:
+  artifactName: Mujian-${version}-portable.${ext}
+  unicode: true

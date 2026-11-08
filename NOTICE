@@ -1,0 +1,65 @@
+# NOTICE
+
+**幕间 MUJIAN**  
+Copyright © 2026 Mujian Contributors
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but **WITHOUT
+ANY WARRANTY**; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+details. The full license text is included in the root `LICENSE` file.
+
+## Upstream
+
+幕间 is a derivative work of **LibreTV**:
+
+- Project: LibreTV
+- Source: https://github.com/LibreSpark/LibreTV
+- Copyright: LibreTV contributors
+- License: AGPL-3.0-or-later
+
+The upstream project is licensed under AGPL-3.0-or-later. 幕间 keeps the same
+license. The original copyright notices and license text are preserved.
+
+## Modifications
+
+This repository contains substantial modifications to the upstream frontend and
+a new desktop runtime, including but not limited to:
+
+- New visual identity, layout, typography, color system, and application shell
+  (sidebar, custom title bar, mobile navigation).
+- A redesigned discovery home with a featured hero and horizontal media rails.
+- A new anime section with a weekly simulcast calendar, local watchlist, and
+  Douban-based fallback when Bangumi is unreachable.
+- New local-first desktop integration: per-user local server, automatic local
+  session, tray menu, single-instance handling, window-state persistence, and
+  system-following theme.
+- Rebranded metadata, icons, manifest, and player poster.
+- Packaging scripts for a Windows portable build.
+
+The source protocol names `LibreTV-SourceList` and `LibreTV-Settings` are kept
+for compatibility with existing source lists and settings exports.
+
+## Third-party services and trademarks
+
+幕间 does not host, store, or distribute video content. Search results, metadata,
+posters, and live streams come from third-party interfaces configured by the
+user or by the upstream project. Their terms, availability, and legality are
+outside the control of this project.
+
+The bundled public-domain presets query the Internet Archive (archive.org).
+Internet Archive is an independent service; this project is not affiliated
+with or endorsed by it. Content availability and rights are determined by the
+Archive and the item's uploader.
+
+Douban, Bangumi, and all other product names, logos, and brands are the
+property of their respective owners. Use of these names is for identification
+only and does not imply endorsement.
+
+Electron, Chromium, Next.js, React, and other open-source dependencies are
+distributed under their own licenses. Their license texts are included with the
+packaged application where required.

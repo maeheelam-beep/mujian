@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Electron packaging
+release/
+dist/
+
+# local previews and diagnostics
+.preview/
+*.log
+*.tsbuildinfo
+
+# environment
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
